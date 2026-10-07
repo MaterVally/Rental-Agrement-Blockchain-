@@ -4,59 +4,71 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Blockchain Developer Toolkit</title>
+    <title>Blockchain Rental Agreement DApp</title>
 
-    <!-- Bootstrap -->
-    <link href="vendor/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- https://getbootstrap.com/docs/4.1/examples/dashboard/ -->
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <style>
+      body {
+        padding-top: 70px;
+        background-color: #f8f9fa;
+      }
+      .card {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: none;
+        border-radius: 10px;
+      }
+    </style>
   </head>
   <body>
-    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Blockchain Developer Toolkit</a>
-      <ul class="navbar-nav px-3">
+    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-2 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0 font-weight-bold" href="#">🏡 Rental Agreement DApp</a>
+      <ul class="navbar-nav px-3 ml-auto">
         <li class="nav-item text-nowrap">
-          <small><a class="nav-link" href="#">Your Account: <span id="account"></span></a></small>
+          <span class="navbar-text text-light">Account: <strong id="account" class="text-warning">Connecting...</strong></span>
         </li>
       </ul>
     </nav>
-    <div class="container-fluid">
-      <div class="row">
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10">
-          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap pt-3 pb-2 mb-3" style="margin-top: 40px;">
-            <div id="loader" style="">
-              <p class="text-center">Loading...</p>
-            </div>
-            <div id="content" class="col-lg-9" style="display: none;">
-              <h2>My Contract</b></h2>
-              <p>Here is the value stored on the blockchain: <span id="value"></span></p>
 
-              <h5>Update the Value</h5>
-              <form onSubmit="App.set(); return false;" class="" role="form">
-                <div class="form-group">
-                  <input id="newValue" class="form-control" type="text"></input>
-                </div>
-                <button type="submit" class="btn btn-primary">Set Value</button>
-              </form>
+    <div class="container mt-4">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <div id="loader" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">Loading...</span>
             </div>
+            <p class="mt-3 text-muted">Connecting to Blockchain & Smart Contracts...</p>
           </div>
-        </main>
+
+          <div id="content" class="card p-4" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="card-title text-primary mb-0">Blockchain Rental Contract</h3>
+              <span class="badge badge-success px-2 py-1">Ganache Connected</span>
+            </div>
+
+            <p class="mb-2"><strong>Contract Address:</strong> <small id="contractAddress" class="text-muted font-monospace">Loading...</small></p>
+            <p class="lead"><strong>Stored Status / Value on Blockchain:</strong> <br><span id="value" class="badge badge-info p-2 font-weight-bold mt-1" style="font-size: 1.1rem;">...</span></p>
+
+            <hr>
+
+            <h5 class="mt-4">Update Agreement Data</h5>
+            <form onSubmit="App.set(); return false;" class="mt-3">
+              <div class="form-group">
+                <label for="newValue">New Value / Status Description</label>
+                <input id="newValue" class="form-control" type="text" placeholder="e.g. Agreement Signed by Landlord & Tenant" required></input>
+              </div>
+              <button type="submit" class="btn btn-primary px-4">Update Blockchain State</button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="vendor/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="https://etherscan.io/jss/web3.min.js"></script>
-    <script src="vendor/truffle-contract/dist/truffle-contract.js"></script>
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@truffle/contract@4.3.31/dist/truffle-contract.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

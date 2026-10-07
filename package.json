@@ -1,31 +1,22 @@
 {
   "name": "rentalagreement",
   "version": "1.0.0",
-  "description": "Rental Agreement between Landlords and Teanant",
+  "description": "Rental Agreement between Landlords and Tenant",
   "main": "truffle-config.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
-    "dev": "lite-server",
-    "test": "echo \"Error: no test specified\" && sexit 1"
-  },
-  "author": "SpideyPool",
-  "license": ":|",
-  "devDependencies": {
-    "bootstrap": "^4.3.1",
-    "chai": "^4.1.2",
-    "chai-as-promised": "^7.1.1",
-    "chai-bignumber": "^2.0.2",
-    "dotenv": "^4.0.0",
-    "ganache-cli": "^6.1.8",
-    "lite-server": "^2.3.0",
-    "nodemon": "^1.17.3",
-    "solidity-coverage": "^0.6.4",
-    "truffle": "5.0.0-beta.0",
-    "truffle-contract": "3.0.6",
+    "dev": "node server.js",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "test": "truffle test"
   },
   "dependencies": {
-    "@truffle/hdwallet-provider": "^1.0.18"
+    "express": "^4.22.3"
+  },
+  "devDependencies": {
+    "@truffle/contract": "^4.6.31",
+    "bootstrap": "^4.6.2",
+    "dotenv": "^16.4.5",
+    "ganache": "^7.9.2",
+    "truffle": "^5.11.5"
   }
 }

@@ -1,103 +1,172 @@
 App = {
   web3Provider: null,
-  contracts: {},
   account: '0x0',
   loading: false,
   contractInstance: null,
+  contractAddress: null,
 
   init: async () => {
-    await App.initWeb3()
-    await App.initContracts()
-    await App.render()
+    await App.initWeb3();
+    await App.initContracts();
+    await App.render();
   },
 
-  // https://medium.com/metamask/https-medium-com-metamask-breaking-change-injecting-web3-7722797916a8
   initWeb3: async () => {
-    if (typeof web3 !== 'undefined') {
-      App.web3Provider = web3.currentProvider
-      web3 = new Web3(web3.currentProvider)
-    } else {
-      window.alert("Please connect to Metamask.")
-    }
-    // Modern dapp browsers...
     if (window.ethereum) {
-      window.web3 = new Web3(ethereum)
+      App.web3Provider = window.ethereum;
+      window.web3 = new Web3(window.ethereum);
       try {
-        // Request account access if needed
-        await ethereum.enable()
-        // Acccounts now exposed
-        web3.eth.sendTransaction({/* ... */})
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
       } catch (error) {
-        // User denied account access...
+        console.error("User denied account access", error);
       }
+    } else if (window.web3) {
+      App.web3Provider = window.web3.currentProvider;
+      window.web3 = new Web3(window.web3.currentProvider);
+    } else {
+      App.web3Provider = new Web3.providers.HttpProvider('http://127.0.0.1:7545');
+      window.web3 = new Web3(App.web3Provider);
     }
-    // Legacy dapp browsers...
-    else if (window.web3) {
-      App.web3Provider = web3.currentProvider
-      window.web3 = new Web3(web3.currentProvider)
-      // Acccounts always exposed
-      web3.eth.sendTransaction({/* ... */})
-    }
-    // Non-dapp browsers...
-    else {
-      console.log('Non-Ethereum browser detected. You should consider trying MetaMask!')
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', () => App.render());
+      window.ethereum.on('chainChanged', () => window.location.reload());
     }
   },
 
   initContracts: async () => {
-    const contract = await $.getJSON('MyContract.json')
-    App.contracts.MyContract = TruffleContract(contract)
-    App.contracts.MyContract.setProvider(App.web3Provider)
+    try {
+      const contractData = await $.getJSON('MyContract.json');
+      let networkId;
+      try {
+        networkId = await web3.eth.net.getId();
+      } catch (err) {
+        networkId = null;
+      }
+      console.log("Connected Network ID:", networkId);
+
+      let deployedNetwork = networkId ? contractData.networks[networkId] : null;
+      if (!deployedNetwork) {
+        if (contractData.networks['5777']) {
+          deployedNetwork = contractData.networks['5777'];
+        } else if (contractData.networks['1337']) {
+          deployedNetwork = contractData.networks['1337'];
+        } else {
+          const networkKeys = Object.keys(contractData.networks);
+          if (networkKeys.length > 0) {
+            deployedNetwork = contractData.networks[networkKeys[networkKeys.length - 1]];
+          }
+        }
+      }
+
+      if (deployedNetwork && deployedNetwork.address) {
+        App.contractAddress = deployedNetwork.address;
+        App.contractInstance = new web3.eth.Contract(contractData.abi, App.contractAddress);
+        console.log("Contract Initialized at Address:", App.contractAddress);
+      } else {
+        console.error("No deployed contract address found in JSON.");
+      }
+    } catch (e) {
+      console.error("Error loading contract JSON:", e);
+    }
   },
 
   render: async () => {
-    // Prevent double render
-    if (App.loading) {
-      return
+    if (App.loading) return;
+    App.setLoading(true);
+
+    try {
+      const accounts = await web3.eth.getAccounts();
+      App.account = (accounts && accounts.length > 0) ? accounts[0] : 'Not Connected';
+      $('#account').html(App.account);
+
+      if (!App.contractInstance) {
+        await App.initContracts();
+      }
+
+      if (App.contractInstance) {
+        $('#contractAddress').html(App.contractAddress);
+        let code = '0x';
+        try {
+          code = await web3.eth.getCode(App.contractAddress);
+        } catch (e) {
+          code = '0x';
+        }
+
+        if (!code || code === '0x' || code === '0x0') {
+          // Try local Ganache node fallback (http://127.0.0.1:7545)
+          try {
+            const localWeb3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'));
+            const localCode = await localWeb3.eth.getCode(App.contractAddress);
+            if (localCode && localCode !== '0x' && localCode !== '0x0') {
+              const contractData = await $.getJSON('MyContract.json');
+              const localContract = new localWeb3.eth.Contract(contractData.abi, App.contractAddress);
+              const value = await localContract.methods.get().call();
+              $('#value').html(value + " <br><small class='text-warning font-weight-normal' style='font-size:0.8rem;'>⚠️ MetaMask is on a different network. Switch MetaMask to <strong>Ganache / Localhost 7545 (Chain ID 1337)</strong> to submit updates.</small>");
+              App.setLoading(false);
+              return;
+            }
+          } catch (localErr) {
+            console.error("Local RPC check failed:", localErr);
+          }
+
+          $('#value').html("<span class='text-danger'>Contract not deployed on connected MetaMask network. Please switch MetaMask network to Localhost 7545 (HTTP://127.0.0.1:7545, Network ID 5777).</span>");
+          App.setLoading(false);
+          return;
+        }
+
+        const value = await App.contractInstance.methods.get().call();
+        $('#value').html(value);
+      } else {
+        $('#value').html("Contract not loaded");
+      }
+    } catch (err) {
+      console.error("Error rendering app:", err);
+      $('#value').html("Error reading contract: " + err.message);
     }
 
-    // Update app loading state
-    App.setLoading(true)
-
-    // Set the current blockchain account
-    App.account = web3.eth.accounts[0]
-    $('#account').html(App.account)
-
-    // Load smart contract
-    const contract = await App.contracts.MyContract.deployed()
-    App.contractInstance = contract
-
-    const value = await App.contractInstance.get()
-    $('#value').html(value)
-
-    App.setLoading(false)
+    App.setLoading(false);
   },
 
   set: async () => {
-    App.setLoading(true)
-
-    const newValue = $('#newValue').val()
-
-    await App.contractInstance.set(newValue)
-    window.alert('Value updated! Refresh this page to see the new value (it might take a few seconds).')
+    if (!App.contractInstance) {
+      alert("Smart contract is not loaded yet. Please refresh or check MetaMask connection.");
+      return;
+    }
+    App.setLoading(true);
+    const newValue = $('#newValue').val();
+    try {
+      let accounts = await web3.eth.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      }
+      
+      await App.contractInstance.methods.set(newValue).send({ from: accounts[0] });
+      
+      const updatedValue = await App.contractInstance.methods.get().call();
+      $('#value').html(updatedValue);
+      window.alert('Value updated successfully on the Blockchain!');
+    } catch (err) {
+      console.error("Set error:", err);
+      alert('Transaction failed: ' + (err.message || err));
+    }
+    App.setLoading(false);
   },
 
   setLoading: (boolean) => {
-    App.loading = boolean
-    const loader = $('#loader')
-    const content = $('#content')
+    App.loading = boolean;
+    const loader = $('#loader');
+    const content = $('#content');
     if (boolean) {
-      loader.show()
-      content.hide()
+      loader.show();
+      content.hide();
     } else {
-      loader.hide()
-      content.show()
+      loader.hide();
+      content.show();
     }
   }
-}
+};
 
-$(() => {
-  $(window).load(() => {
-    App.init()
-  })
-})
+$(window).on('load', () => {
+  App.init();
+});
