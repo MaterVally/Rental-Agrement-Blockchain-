@@ -1,74 +1,240 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Blockchain Rental Agreement DApp</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="RentChain — trustless blockchain rental agreement with deposit escrow.">
+  <title>RentChain — Rental Escrow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <style>
-      body {
-        padding-top: 70px;
-        background-color: #f8f9fa;
-      }
-      .card {
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border: none;
-        border-radius: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-2 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0 font-weight-bold" href="#">🏡 Rental Agreement DApp</a>
-      <ul class="navbar-nav px-3 ml-auto">
-        <li class="nav-item text-nowrap">
-          <span class="navbar-text text-light">Account: <strong id="account" class="text-warning">Connecting...</strong></span>
-        </li>
-      </ul>
-    </nav>
+<!-- ── Loader ───────────────────────────────────────────────────────── -->
+<div id="loader" class="loader-overlay">
+  <div class="loader-card">
+    <div class="spinner"></div>
+    <div class="loader-text">Connecting to Blockchain</div>
+    <div class="loader-sub">Approve MetaMask connection…</div>
+  </div>
+</div>
 
-    <div class="container mt-4">
-      <div class="row justify-content-center">
-        <div class="col-md-8">
-          <div id="loader" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-              <span class="sr-only">Loading...</span>
-            </div>
-            <p class="mt-3 text-muted">Connecting to Blockchain & Smart Contracts...</p>
+<!-- ── App Shell ────────────────────────────────────────────────────── -->
+<div class="shell" id="appShell" style="display:none;">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">R</div>
+      <div class="brand-name">RentChain</div>
+      <div class="brand-tag">Rental Escrow</div>
+    </div>
+    <div class="topbar-right">
+      <div class="chip">
+        <span class="chip-dot"></span>
+        <span id="networkLabel">Ganache</span>
+        <span class="chip-strong" id="networkStrong">Local</span>
+      </div>
+      <div class="chip account">
+        👤 <span class="mono chip-strong" id="walletShort">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meta strip -->
+  <div class="metastrip">
+    <div class="meta-cell">
+      <div class="meta-label">Agreement status</div>
+      <div class="meta-value" id="metaStatus">
+        <span class="status-dot closed" id="statusDot"></span>
+        <span id="statusText">Loading…</span>
+      </div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-label">Contract</div>
+      <div class="meta-value mono" id="metaContract">—</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-label">Your role</div>
+      <div class="meta-value" id="metaRole">—</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-label">Rent payments</div>
+      <div class="meta-value" id="metaPayments">0 <span class="payments-of">of —</span></div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="col">
+
+      <!-- Agreement Details Card -->
+      <div class="card accent-left" id="detailsCard">
+        <div class="card-head">
+          <div class="card-icon">🏠</div>
+          <div class="card-title">Rental Agreement Details</div>
+        </div>
+
+        <!-- Dispute banner (hidden unless Disputed) -->
+        <div class="dispute-banner" id="disputeBanner" style="display:none;">
+          <b>Dispute raised by landlord.</b> Proposed deduction:
+          <span class="mono" id="disputeDeductionBanner">—</span> —
+          <span id="disputeReasonBanner">—</span>
+        </div>
+
+        <div class="fieldgrid">
+          <div class="field">
+            <div class="field-label">Property address</div>
+            <div class="field-value" id="fProperty">—</div>
           </div>
-
-          <div id="content" class="card p-4" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 class="card-title text-primary mb-0">Blockchain Rental Contract</h3>
-              <span class="badge badge-success px-2 py-1">Ganache Connected</span>
-            </div>
-
-            <p class="mb-2"><strong>Contract Address:</strong> <small id="contractAddress" class="text-muted font-monospace">Loading...</small></p>
-            <p class="lead"><strong>Stored Status / Value on Blockchain:</strong> <br><span id="value" class="badge badge-info p-2 font-weight-bold mt-1" style="font-size: 1.1rem;">...</span></p>
-
-            <hr>
-
-            <h5 class="mt-4">Update Agreement Data</h5>
-            <form onSubmit="App.set(); return false;" class="mt-3">
-              <div class="form-group">
-                <label for="newValue">New Value / Status Description</label>
-                <input id="newValue" class="form-control" type="text" placeholder="e.g. Agreement Signed by Landlord & Tenant" required></input>
-              </div>
-              <button type="submit" class="btn btn-primary px-4">Update Blockchain State</button>
-            </form>
+          <div class="field">
+            <div class="field-label">Monthly rent</div>
+            <div class="field-value accent mono" id="fRent">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Security deposit</div>
+            <div class="field-value mono" id="fDeposit">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Lease duration</div>
+            <div class="field-value" id="fDuration">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Landlord</div>
+            <div class="field-value addr mono" id="fLandlord">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Tenant</div>
+            <div class="field-value addr mono" id="fTenant">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Lease started</div>
+            <div class="field-value" id="fLeaseStart">—</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Deposit in escrow</div>
+            <div class="field-value mono" id="fEscrow">—</div>
           </div>
         </div>
       </div>
+
+      <!-- Payment History Card -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon">💳</div>
+          <div class="card-title">Rent Payment History</div>
+        </div>
+        <div id="historyList"><div class="empty">No rent payments recorded yet.</div></div>
+      </div>
+
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@truffle/contract@4.3.31/dist/truffle-contract.min.js"></script>
-    <script src="app.js"></script>
-  </body>
+    <!-- RIGHT COLUMN — Actions -->
+    <div class="col">
+      <div class="card" id="actionsCard">
+        <div class="card-head">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Actions</div>
+        </div>
+
+        <!-- Each action block is hidden/shown by JS -->
+
+        <!-- Created: any non-landlord can accept -->
+        <div id="actAccept" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge accent">📋</div>
+            <div class="action-copy">Review the agreement terms and <b>accept</b> to become the tenant. Your address will be permanently locked as tenant.</div>
+          </div>
+          <button class="btn" onclick="App.acceptAgreement()">✅ Accept Agreement</button>
+        </div>
+
+        <!-- Accepted: tenant pays deposit -->
+        <div id="actDeposit" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge accent">🔒</div>
+            <div class="action-copy">Pay the security deposit to <b>activate</b> the lease. Funds are held in escrow — not released to the landlord until you request lease end.</div>
+          </div>
+          <div class="amount-pill" id="depositPill">—</div>
+          <button class="btn btn-ok" onclick="App.payDeposit()">🔒 Pay Deposit (Escrow)</button>
+        </div>
+
+        <!-- Active: tenant pays rent + requests end -->
+        <div id="actActive" style="display:none;">
+          <div class="action-desc">Pay your monthly rent directly to the landlord.</div>
+          <div class="amount-pill" id="rentPill">—</div>
+          <button class="btn btn-ok" onclick="App.payRent()">💸 Pay Monthly Rent</button>
+          <button class="btn btn-warn" style="margin-top:8px;" onclick="App.requestLeaseEnd()">📋 Request Lease End</button>
+        </div>
+
+        <!-- End Requested: landlord actions -->
+        <div id="actEndLandlord" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge warn">⏳</div>
+            <div class="action-copy">Tenant has requested to end the lease. <b>Return</b> the full deposit or <b>raise a dispute</b> with a proposed deduction.</div>
+          </div>
+          <button class="btn btn-ok" onclick="App.approveDepositReturn()">✅ Return Full Deposit</button>
+          <div class="form-group">
+            <label class="form-label">Deduction amount (ETH)</label>
+            <input id="deductionAmt" class="form-input mono" type="number" step="0.001" min="0" placeholder="e.g. 0.005">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason</label>
+            <input id="deductionReason" class="form-input" type="text" placeholder="e.g. Wall damage, cleaning">
+          </div>
+          <button class="btn btn-danger" onclick="App.raiseDispute()">⚠️ Raise Dispute</button>
+        </div>
+
+        <!-- End Requested: tenant waiting / timeout -->
+        <div id="actEndTenant" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge warn">⏳</div>
+            <div class="action-copy">Lease end requested. Waiting for <b>landlord</b> to return deposit. If 7 days pass with no action, you can claim the full deposit.</div>
+          </div>
+          <button class="btn" onclick="App.claimDepositAfterTimeout()">⏱️ Claim Deposit (Timeout)</button>
+        </div>
+
+        <!-- Disputed: tenant accepts deduction or claims after timeout -->
+        <div id="actDisputed" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge danger">⚠️</div>
+            <div class="action-copy">Landlord raised a dispute. Review the deduction in the details panel, then <b>accept</b> to settle, or wait for the 7-day timeout.</div>
+          </div>
+          <button class="btn btn-warn" onclick="App.acceptDeduction()">🤝 Accept Deduction & Settle</button>
+          <button class="btn" style="margin-top:8px;" onclick="App.claimDepositAfterTimeout()">⏱️ Claim Deposit (Timeout)</button>
+        </div>
+
+        <!-- Closed / Settled -->
+        <div id="actClosed" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge">✓</div>
+            <div class="action-copy">Agreement has been <b>closed</b> and all funds settled.<br>Deposit returned in full to the tenant.</div>
+          </div>
+        </div>
+
+        <!-- Observer -->
+        <div id="actObserver" style="display:none;">
+          <div class="action-state">
+            <div class="action-badge accent">👀</div>
+            <div class="action-copy">You are viewing as an <b>observer</b>. Switch to the landlord or tenant account in MetaMask to take actions.</div>
+          </div>
+        </div>
+
+        <!-- Refresh -->
+        <button class="btn" id="refreshBtn" onclick="App.refresh()" style="margin-top:16px;">↻ Refresh status</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+<script src="app.js"></script>
+</body>
 </html>
